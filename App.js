@@ -3,35 +3,52 @@ import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
 
 export default function App() {
   const [cards, setCards] = useState([]);
-  const [flippedCards, setFlippedCards] = useState([]);
+  const [flippedCard, setFlippedCard] = useState(null);
+  const [secondCard, setSecondCard] = useState(null);
+  const [matchedCards, setMatchedCards] = useState([]);
   const [score, setScore] = useState(0);
   const [gameOver, setGameOver] = useState(false);
+  const [gamesPlayed, setGamesPlayed] = useState(0);
+  const [moves, setMoves] = useState(0);
 
   useEffect(() => {
     // Initialize cards
-    const cards = [      { id: 1, value: '🐶' },      { id: 2, value: '🐶' },      { id: 3, value: '🐱' },      { id: 4, value: '🐱' },      { id: 5, value: '🐻' },      { id: 6, value: '🐻' },      { id: 7, value: '🦁' },      { id: 8, value: '🦁' },    ];
+    const cards = [
+      { id: 1, value: '🐶' },
+      { id: 2, value: '🐶' },
+      { id: 3, value: '🐱' },
+      { id: 4, value: '🐱' },
+      { id: 5, value: '🐻' },
+      { id: 6, value: '🐻' },
+      { id: 7, value: '🦁' },
+      { id: 8, value: '🦁' },
+    ];
     setCards(shuffle(cards));
   }, []);
 
   const flipCard = (card) => {
-    // Check if card is already flipped or game is over
-    if (flippedCards.includes(card.id) || gameOver) {
+    // Check if card is already flipped or matched or game is over
+    if (flippedCard === card.id || secondCard === card.id || matchedCards.includes(card.id) || gameOver) {
       return;
     }
 
     // Flip card
-    setFlippedCards([...flippedCards, card.id]);
-
-    // Check if two cards are flipped
-    if (flippedCards.length === 1) {
+    if (flippedCard === null) {
+      setFlippedCard(card.id);
+      setMoves(moves+1);
+    } else {
+      setSecondCard(card.id);
       // Check if match
-      if (card.value === cards.find(c => c.id === flippedCards[0]).value) {
+      if (card.value === cards.find(c => c.id === flippedCard).value) {
         setScore(score + 1);
-        setFlippedCards([]);
+        setMatchedCards([...matchedCards, flippedCard, card.id]);
+        setFlippedCard(null);
+        setSecondCard(null);
       } else {
         // No match, wait and flip cards back
         setTimeout(() => {
-          setFlippedCards([]);
+          setFlippedCard(null);
+          setSecondCard(null);
         }, 1000);
       }
     }
@@ -46,9 +63,13 @@ export default function App() {
 
   const resetGame = () => {
     setCards(shuffle(cards));
-    setFlippedCards([]);
+    setFlippedCard(null);
+    setSecondCard(null);
+    setMatchedCards([]);
     setScore(0);
     setGameOver(false);
+    setGamesPlayed(gamesPlayed+1);
+    setMoves(0);
   };
 
   const shuffle = (array) => {
@@ -63,22 +84,27 @@ export default function App() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Memory Match</Text>
-      <Text style={styles.score}>Score: {score}</Text>
+      {/* <Text style={styles.score}>Score: {score}</Text> */}
+      {gamesPlayed != 0 && <Text style={styles.score}>Moves: {moves}</Text>}
       <View style={styles.cards}>
         {cards.map(card => (
-          <TouchableOpacity key={card.id} style={[styles.card, flippedCards.includes(card.id) && styles.cardFlipped]} onPress={() => flipCard(card)}>
-            <Text style={styles.cardText}>{flippedCards.includes(card.id) ? card.value : '?'}</Text>
+          <TouchableOpacity key={card.id} style={[styles.card]} onPress={() => flipCard(card)}>
+            <Text style={styles.cardText}>{flippedCard === card.id || secondCard === card.id || matchedCards.includes(card.id) ? card.value : '?'}</Text>
           </TouchableOpacity>
         ))}
       </View>
       {gameOver && (
         <TouchableOpacity style={styles.button} onPress={resetGame}>
-          <Text style={styles.buttonText}>Play Again</Text>
+          {gamesPlayed == 0 && <Text style={styles.buttonText}>Play</Text>}
+          {gamesPlayed != 0 && <Text style={styles.buttonText}>Play Again</Text>}
         </TouchableOpacity>
       )}
     </View>
   );
 }
+
+
+
 
 const styles = StyleSheet.create({
   container: {
